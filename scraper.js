@@ -42,10 +42,8 @@ async function fetchAndSave() {
 				const level = result[j]
 				const levelHash = md5(level.song + level.artist + level.charter)
 				if (seenLevels.includes(levelHash)) {
-					console.log(levelHash + " seen already: " + level.song + " " + level.artist + " " + level.charter)
 					continue;
 				}
-				console.log(levelHash + " added " + level.song + " " + level.artist + " " + level.charter)
 
 				seenLevels.push(levelHash)
 				results.push(level)
