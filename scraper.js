@@ -5,7 +5,11 @@ const md5 = require('md5')
 const baseUrl = "https://beatblockbrowser.me/api/search/"
 const terms = "a b c d e f g h i j k l m n o p q r s t u v w x y z".split(" ")
 
-function fetchData(url) {
+function sleep(ms) {
+	return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function fetchData(url) {
 	return new Promise((resolve, reject) => {
 		https.get(url, (resp) => {
 			let data = ''
@@ -31,25 +35,40 @@ function fetchData(url) {
 
 async function fetchAndSave() {
 	const results = []
-	const seenLevels = []
+	const seenLevels = new Set()
 
 	for (let i = 0; i < terms.length; i++) {
-		const url = baseUrl + terms[i]
+		await sleep(3000)
+
+		const term = terms[i]
+		const url = baseUrl + term
 		console.log(`fetching: ${url}`)
+
 		try {
 			const result = await fetchData(url)
-			for (let j = 0; j < result.length; j++) {
-				const level = result[j]
-				const levelHash = md5(level.song + level.artist + level.charter)
-				if (seenLevels.includes(levelHash)) {
-					continue;
-				}
 
-				seenLevels.push(levelHash)
+			if (!Array.isArray(result)) {
+				console.warn(`non-array result for "${term}":`, result)
+				continue
+			}
+
+			if (result.length === 0) {
+				console.log(`no results for: ${term}`)
+				continue
+			}
+
+			for (const level of result) {
+				const levelHash = md5(level.song + level.artist + level.charter)
+				if (seenLevels.has(levelHash)) {
+					console.log(`already seen: ${level.song} --- ${level.artist} --- ${level.charter}`) 
+					continue
+				}
+				console.log(`added: ${level.song} --- ${level.artist} --- ${level.charter}`) 
+				seenLevels.add(levelHash)
 				results.push(level)
 			}
 		} catch (err) {
-			console.error(`error at "${terms[i]}"`, err)
+			console.error(`error at "${term}":`, err)
 		}
 	}
 
@@ -61,5 +80,6 @@ async function fetchAndSave() {
 		console.error('error writing file:', err)
 	}
 }
+
 
 fetchAndSave()
